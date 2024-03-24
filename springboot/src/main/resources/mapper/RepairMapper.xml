@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.RepairMapper">
+    <resultMap id="baseMap" type="Repair">
+        <id column="id" property="id"/>
+        <result column="room_id" property="roomId"/>
+        <result column="describe" property="describe"/>
+        <result column="status" property="status"/>
+        <result column="create_date" property="createDate"/>
+        <result column="finish_date" property="finishDate"/>
+        <association property="room">
+            <id column="r_id" property="id"/>
+            <result column="number" property="number"/>
+        </association>
+        <collection property="picture" ofType="string">
+            <result column="picture"/>
+        </collection>
+    </resultMap>
+
+    <insert id="save" keyProperty="id" keyColumn="id" useGeneratedKeys="true">
+        insert into repair(room_id, `describe`, status, create_date)
+            value (#{roomId}, #{describe}, 0, now())
+    </insert>
+
+    <update id="update">
+        update repair
+        <set>
+            <if test="describe != null">
+                `describe` = #{describe}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        update repair
+        set status = 1, finish_date = now()
+        where id = #{id}
+    </update>
+
+    <select id="list" resultMap="baseMap">
+        select re.id as id,
+               re.room_id as room_id,
+               status,
+               create_date,
+               finish_date,
+               `describe`,
+               rp.picture as picture,
+               r.id as r_id,
+               r.number as number
+        from repair re
+        join room r on r.id = re.room_id
+        left join repair_picture rp on re.id = rp.repair_id
+        <where>
+            <if test="repair.roomId != null">
+                re.room_id = #{repair.roomId}
+            </if>
+            <if test="repair.status != null">
+                and re.status = #{repair.status}
+            </if>
+            <if test="repair.createDate != null">
+                and re.create_date = #{repair.createDate}
+            </if>
+            <if test="true">
+                and r.building_id in
+                <foreach collection="bid"
+                         open="("
+                         close=")"
+                         separator=","
+                         item="item">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="query" resultMap="baseMap">
+        select re.id as id,
+               re.room_id as room_id,
+               status,
+               create_date,
+               `describe`,
+               finish_date,
+               rp.picture as picture,
+               r.id as r_id,
+               r.number as number
+        from repair re
+            join room r on r.id = re.room_id
+            left join repair_picture rp on re.id = rp.repair_id
+        where re.id = #{id}
+    </select>
+
+    <delete id="delete">
+        delete from repair where id = #{id}
+    </delete>
+
+    <delete id="deletePicture">
+        delete from repair_picture where repair_id = #{repairId}
+    </delete>
+
+    <delete id="deleteByRoomId">
+        delete from repair where room_id = #{roomId}
+    </delete>
+    <delete id="deletePictureByRoomId">
+        delete  repair_picture
+        from repair_picture
+            left join repair r on repair_picture.repair_id = r.id where r.room_id = #{id}
+    </delete>
+
+    <insert id="savePicture">
+        insert into repair_picture(picture, repair_id) VALUE (#{pic}, #{r_id})
+    </insert>
+</mapper>

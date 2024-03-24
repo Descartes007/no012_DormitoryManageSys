@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hzvtc.myproject.dao.NoticeMapper">
+    <resultMap id="baseMap" type="Notice">
+        <id column="id" property="id"/>
+        <result column="msg" property="msg"/>
+        <result column="user_id" property="userId"/>
+        <result column="time" property="time"/>
+        <result column="is_read" property="isRead"/>
+        <association property="user">
+            <id column="u_id" property="id"/>
+            <result column="u_name" property="realName"/>
+        </association>
+    </resultMap>
+
+
+    <select id="listByUserId" resultMap="baseMap">
+        select n.id         as id,
+               n.msg        as msg,
+               n.user_id    as user_id,
+               n.time       as time,
+               nu.is_read   as is_read,
+               su.id        as u_id,
+               su.real_name as u_name
+        from notice_user nu
+                 left join notice n on n.id = nu.notice_id
+                 left join system_user su on su.id = n.user_id
+        where nu.user_id = #{uid}
+          and nu.is_delete = 0
+        order by is_read , n.time desc
+    </select>
+
+    <select id="listBySendUser" resultType="Notice">
+        select id, msg, time
+        from notice
+        where user_id = #{userId} order by time desc
+    </select>
+
+    <insert id="save" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into notice(msg, user_id, time)
+            VALUE (#{msg}, #{userId}, now())
+    </insert>
+    <insert id="saveRelevance">
+        insert into notice_user(user_id, notice_id, is_read)
+            VALUE (#{uid}, #{nid}, 0)
+    </insert>
+    <update id="deleteMyNotice">
+        update notice_user
+        set is_delete = 1
+        where user_id = #{uid}
+          and notice_id = #{nid}
+    </update>
+    <delete id="deleteNotice">
+        delete
+        from notice
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteByNoticeId">
+        delete
+        from notice_user
+        where notice_id = #{id}
+    </delete>
+
+    <select id="query" resultMap="baseMap">
+        select n.id         as id,
+               n.msg        as msg,
+               n.time       as time,
+               n.user_id    as user_id,
+               su.id        as u_id,
+               su.real_name as u_name
+        from notice n
+                 left join system_user su on su.id = n.user_id
+        where n.id = #{id}
+    </select>
+
+    <update id="updateRead">
+        update notice_user
+        set is_read = 1
+        where user_id = #{uid}
+          and notice_id = #{nid}
+    </update>
+
+    <resultMap id="withReceiveUsers" type="Notice">
+        <id column="id" property="id"/>
+        <result column="msg" property="msg"/>
+        <result column="time" property="time"/>
+        <collection property="receiveUsers" ofType="Notice">
+            <id column="u_id" property="id"/>
+            <result column="is_read" property="isRead"/>
+            <association property="user">
+                <id property="id" column="u_id"/>
+                <result property="realName" column="u_name"/>
+            </association>
+        </collection>
+    </resultMap>
+
+    <select id="queryWithReceiver" resultMap="withReceiveUsers">
+        select n.id         as id,
+               n.msg        as msg,
+               n.time       as time,
+               su.id        as u_id,
+               su.real_name as u_name,
+               nu.is_read   as is_read
+        from notice_user nu
+                 left join notice n on n.id = nu.notice_id
+                 left join system_user su on nu.user_id = su.id
+        where n.id = #{id}
+    </select>
+
+    <select id="countByUserId" resultType="int">
+        select count(*)
+        from notice_user where is_read = 0 and is_delete = 0 and user_id = #{userId}
+    </select>
+</mapper>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.SystemFunctionMapper">
+    <resultMap id="withChildren" type="SystemFunction">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="order_num" property="orderNum"/>
+        <result column="path" property="path"/>
+        <result column="component" property="component"/>
+        <result column="menu_type" property="menuType"/>
+        <result column="permission" property="permission"/>
+        <result column="icon" property="icon"/>
+        <result column="create_time" property="createTime"/>
+        <collection property="children" column="id" select="com.hzvtc.myproject.dao.SystemFunctionMapper.getTree"/>
+    </resultMap>
+    <select id="getTree" resultMap="withChildren">
+        select *
+        from system_function
+        where parent_id
+        <if test="pid == null">is null</if>
+        <if test="pid!=null">=#{pid}</if>
+        order by order_num
+    </select>
+    <select id="listFunctionByParentIdAndIds" resultType="SystemFunction">
+        select distinct id, name, parent_id, order_num, path, component, menu_type, permission, icon, create_time
+        from system_function sf left join system_role_function srf on sf.id = srf.function_id
+        where sf.parent_id
+        <if test="pid == null">is null</if>
+        <if test="pid!=null">=#{pid}</if>
+        and sf.menu_type != 'F' and srf.role_id in
+        <foreach collection="roleList" separator="," open="(" close=")" item="role">
+            #{role}
+        </foreach>
+        order by order_num
+    </select>
+    <select id="getPermission" resultType="string">
+        select distinct permission
+        from system_function sf left join system_role_function srf on sf.id = srf.function_id
+        where permission is not null and length(permission) > 0 and srf.role_id in
+        <foreach collection="roleList" item="role" close=")" open="(" separator=",">
+            #{role.id}
+        </foreach>
+    </select>
+    <select id="selectMenuListByRoleId" resultType="Long">
+        select m.id
+        from system_function m
+                 left join system_role_function rm on m.id = rm.function_id
+        where rm.role_id = #{roleId}
+        # and m.id not in (select parent_id FROM system_function where parent_id is not null)
+    </select>
+    <delete id="delete">
+        delete
+        from system_function
+        where id = #{id}
+    </delete>
+    <delete id="deleteRoleFunctionByFunctionId">
+        delete
+        from system_role_function
+        where function_id = #{functionId}
+    </delete>
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        insert into system_function(name, parent_id, order_num, path, component, menu_type, permission, icon,
+                                    create_time) VALUE (#{name}, #{parentId}, #{orderNum}, #{path}, #{component},
+                                                        #{menuType}, #{permission}, #{icon}, now())
+    </insert>
+    <update id="update">
+        update system_function
+        <set>
+            <if test="name != null">
+                name=#{name},
+            </if>
+            <if test="parentId != null">
+                parent_id=#{parentId},
+            </if>
+            <if test="orderNum != null">
+                order_num=#{orderNum},
+            </if>
+            <if test="path != null">
+                path=#{path},
+            </if>
+            <if test="component != null">
+                component=#{component},
+            </if>
+            <if test="menuType != null">
+                menu_type=#{menuType},
+            </if>
+            <if test="permission != null">
+                permission=#{permission},
+            </if>
+            <if test="icon != null">
+                icon=#{icon}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    <select id="query" resultType="SystemFunction">
+        select id,
+               name,
+               parent_id,
+               order_num,
+               path,
+               component,
+               menu_type,
+               permission,
+               icon,
+               create_time
+        from system_function
+        where id = #{id};
+    </select>
+    <select id="listByParentId" resultType="SystemFunction">
+        select id,
+               name,
+               parent_id,
+               order_num,
+               path,
+               component,
+               menu_type,
+               permission,
+               icon,
+               create_time
+        from system_function
+        where parent_id = #{parentId};
+    </select>
+</mapper>

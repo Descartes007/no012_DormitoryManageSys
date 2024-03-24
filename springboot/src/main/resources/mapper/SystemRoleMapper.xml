@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.SystemRoleMapper">
+    <resultMap id="withFunction" type="SystemRole">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+    <select id="listByUserId" resultType="SystemRole">
+        select sr.id as id, sr.name as name
+        from system_role sr
+                 left join system_user_role sur on sr.id = sur.role_id
+                    left join system_user su on sur.user_id = su.id
+        where sur.user_id = #{id} and su.is_delete is null
+    </select>
+
+    <select id="listAll" resultType="SystemRole">
+        select id, name
+        from system_role
+        <where>
+            <if test="name != null and name.length>0">
+                instr(name,#{name})
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <delete id="deleteUserRoleByRoleId">
+        delete
+        from system_user_role
+        where role_id = #{roleId}
+    </delete>
+
+    <delete id="delete">
+        delete
+        from system_role
+        where id = #{roleId}
+    </delete>
+
+    <delete id="deleteRoleFunctionByRoleId">
+        delete
+        from system_role_function
+        where role_id = #{roleId}
+    </delete>
+
+    <insert id="insertUserRole">
+        insert into system_user_role(user_id, role_id) VALUE (#{userId}, #{roleId})
+    </insert>
+
+    <insert id="save" keyProperty="id" useGeneratedKeys="true">
+        insert into system_role(name, create_time) VALUE (#{name}, now())
+    </insert>
+
+    <update id="update">
+        update system_role
+        set name = #{name}
+        where id = #{id}
+    </update>
+
+    <insert id="insertRoleFunction">
+        insert into system_role_function(role_id, function_id) VALUE (#{roleId}, #{functionId})
+    </insert>
+
+    <select id="query" resultType="SystemRole">
+        select id, name
+        from system_role
+        where id = #{id}
+    </select>
+
+</mapper>

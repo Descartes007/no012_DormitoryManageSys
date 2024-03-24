@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.FacultyMapper">
+    <resultMap id="baseMap" type="Faculty">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="orderNum" column="order_num"/>
+        <collection property="children" ofType="Faculty" column="id"
+                    select="com.hzvtc.myproject.dao.FacultyMapper.list"/>
+    </resultMap>
+    <select id="list" resultMap="baseMap">
+        select id, name, parent_id from faculty
+        where parent_id
+        <if test="parentId == null">
+            is
+        </if>
+        <if test="parentId != null">
+            =
+        </if>
+        #{parentId} order by order_num
+    </select>
+
+    <select id="query" resultType="Faculty">
+        select id, name, parent_id, order_num
+        from faculty
+        where id = #{id}
+    </select>
+    <delete id="delete">
+        delete
+        from faculty
+        where id = #{id}
+    </delete>
+
+    <insert id="insert">
+        insert into faculty(name, parent_id, order_num) VALUE (#{name}, #{parentId}, #{orderNum})
+    </insert>
+
+    <update id="update">
+        update faculty
+        <set>
+            <if test="name!=null">
+                name = #{name},
+            </if>
+            <if test="parentId != null">
+                parent_id = #{parentId},
+            </if>
+            <if test="orderNum != null">
+                order_num = #{orderNum}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="listByParentId" resultType="long">
+        select id from faculty where parent_id = #{pid}
+    </select>
+
+    <select id="listAll" resultType="Faculty">
+        select id,name from faculty
+    </select>
+</mapper>

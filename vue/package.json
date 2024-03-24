@@ -1,0 +1,47 @@
+{
+  "name": "myproject",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@riophae/vue-treeselect": "^0.4.0",
+    "axios": "^0.21.0",
+    "core-js": "^3.6.5",
+    "element-ui": "^2.14.1",
+    "js-cookie": "^2.2.1",
+    "path-to-regexp": "^6.2.0",
+    "sass-loader": "^10.1.0",
+    "scss": "^0.2.4",
+    "splitpanes": "^2.3.6",
+    "vue": "^2.6.11",
+    "vue-echarts": "^6.0.0-rc.3",
+    "vue-json-viewer": "^2.2.17",
+    "vue-router": "^3.2.0",
+    "vuex": "^3.6.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-plugin-router": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "babel-eslint": "^10.1.0",
+    "babel-plugin-component": "^1.1.1",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "lint-staged": "^9.5.0",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "gitHooks": {
+    "pre-commit": "lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,jsx,vue}": [
+      "vue-cli-service lint",
+      "git add"
+    ]
+  }
+}

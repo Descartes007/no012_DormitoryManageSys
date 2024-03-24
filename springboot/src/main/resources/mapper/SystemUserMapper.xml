@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.SystemUserMapper">
+    <resultMap id="withRole" type="SystemUser">
+        <id column="id" property="id"/>
+        <result column="real_name" property="realName"/>
+        <result column="login_name" property="loginName"/>
+        <result column="icon" property="icon"/>
+        <result column="cellphone" property="cellphone"/>
+        <result column="email" property="email"/>
+        <result column="b_id" property="buildingId"/>
+        <result column="l_id" property="leaderId"/>
+        <association property="building">
+            <id property="id" column="b_id"/>
+            <result property="name" column="b_name"/>
+        </association>
+        <association property="leader">
+            <id property="id" column="l_id"/>
+            <result column="l_name" property="realName"/>
+        </association>
+        <collection property="userRoleId" ofType="long">
+            <result column="r_id"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="withoutRole" type="SystemUser">
+        <id column="id" property="id"/>
+        <result column="real_name" property="realName"/>
+        <result column="login_name" property="loginName"/>
+        <result column="icon" property="icon"/>
+        <result column="cellphone" property="cellphone"/>
+        <result column="email" property="email"/>
+        <result column="b_id" property="buildingId"/>
+        <result column="l_id" property="leaderId"/>
+        <association property="building">
+            <id property="id" column="b_id"/>
+            <result property="name" column="b_name"/>
+        </association>
+        <association property="leader">
+            <id property="id" column="l_id"/>
+            <result column="l_name" property="realName"/>
+        </association>
+    </resultMap>
+    <select id="listAll" resultType="SystemUser">
+        select id, real_name
+        from system_user
+        where is_delete is null
+        order by id desc;
+    </select>
+    <select id="listIdFitCondition" resultType="int">
+        select distinct su.id
+        from system_user su
+        left join system_user_role sur on su.id = sur.user_id
+        left join system_role sr on sr.id = sur.role_id
+        left join building b on su.building_id = b.id
+        left join system_user su1 on su1.id = su.leader_id
+        <where>
+            <if test="true">
+                su.is_delete is null
+            </if>
+            <if test="realName != null and realName.length > 0">
+                and instr(su.real_name,#{realName})
+            </if>
+            <if test="leaderId != null">
+                and su1.id = #{leaderId}
+            </if>
+            <if test="buildingId != null">
+                and b.id = #{buildingId}
+            </if>
+            <if test="userRoleId != null and userRoleId.size > 0">
+                and sr.id in
+                <foreach collection="userRoleId" item="r" separator="," open="(" close=")">
+                    #{r}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="listByIds" resultMap="withoutRole">
+        select
+        su.id as id,
+        su.real_name as real_name,
+        su.login_name as login_name,
+        su.password as password,
+        su.icon as icon,
+        su.cellphone as cellphone,
+        su.email as email,
+        su.create_time as create_time,
+        su.building_id as b_id,
+        su.leader_id as l_id,
+        su1.real_name as l_name,
+        b.name as b_name
+        from system_user su
+        left join system_user su1 on su.leader_id = su1.id
+        left join building b on su.building_id = b.id
+        where su.id in
+        <if test="ids.size > 0">
+            <foreach collection="ids" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+        <if test="ids.size == 0">
+            (0)
+        </if>
+        order by id
+    </select>
+
+    <select id="get" resultMap="withRole">
+        select su.id         as id,
+               su.real_name  as real_name,
+               su.login_name as login_name,
+               su.icon       as icon,
+               su.cellphone  as cellphone,
+               su.email      as email,
+               sr.id         as r_id,
+               b.id          as b_id,
+               b.name        as b_name,
+               su1.id        as l_id,
+               su1.real_name as l_name
+        from system_user su
+                 left join system_user_role sur on su.id = sur.user_id
+                 left join system_role sr on sr.id = sur.role_id
+                 left join building b on su.building_id = b.id
+                 left join system_user su1 on su1.id = su.leader_id
+        where su.id = #{id}
+          and su.is_delete is null
+    </select>
+    <update id="delete">
+        update system_user
+        set is_delete = 1
+        where id = #{id}
+          and is_delete is null
+    </update>
+
+    <select id="listUserByLoginName" resultType="SystemUser">
+        select id, password
+        from system_user
+        where login_name = #{loginName}
+          and is_delete is null
+    </select>
+
+    <select id="getInfo" resultType="SystemUser">
+        select id, real_name, icon, cellphone, email
+        from system_user
+        where id = #{id}
+          and is_delete is null
+    </select>
+
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        insert into system_user(real_name, login_name, password, icon, cellphone, email, create_time, building_id,
+                                leader_id)
+            value (#{realName}, #{loginName}, #{password}, #{icon}, #{cellphone}, #{email}, now(), #{buildingId},
+                   #{leaderId})
+    </insert>
+    <update id="update">
+        update system_user
+        <set>
+            <if test="buildingId != null">
+                building_id = #{buildingId},
+            </if>
+            <if test="leaderId != null">
+                leader_id = #{leaderId},
+            </if>
+            <if test="realName != null">
+                real_name=#{realName},
+            </if>
+            <if test="cellphone != null">
+                cellphone=#{cellphone},
+            </if>
+            <if test="email != null">
+                email=#{email}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+    <select id="validatePassword" resultType="string">
+        select password
+        from system_user
+        where id = #{id}
+    </select>
+
+    <select id="validateLoginName" resultType="SystemUser">
+        select *
+        from system_user
+        where login_name = #{loginName}
+        <if test="userId != null">
+            and id != #{userId}
+        </if>
+    </select>
+
+    <update id="changePassword">
+        update system_user
+        set password = #{password}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteUserRoleByUserId">
+        delete
+        from system_user_role
+        where user_id = #{userId}
+    </delete>
+
+    <update id="changeIcon">
+        update system_user
+        set icon=#{fileName}
+        where id = #{id}
+    </update>
+
+    <select id="listByLeaderId" resultType="SystemUser">
+        select id,
+               real_name,
+               login_name,
+               password,
+               icon,
+               cellphone,
+               email,
+               create_time,
+               is_delete,
+               leader_id,
+               building_id
+        from system_user
+        where leader_id = #{lid}
+          and is_delete is null
+    </select>
+
+    <select id="listByBuildingIds" resultType="long">
+        select id from system_user where is_delete is null and
+        building_id in
+        <foreach collection="buildingIds" item="item" close=")" open="(" separator=",">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

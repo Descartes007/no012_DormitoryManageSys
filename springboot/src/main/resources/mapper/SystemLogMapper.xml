@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.SystemLogMapper">
+    <resultMap id="baseMap" type="SystemLog">
+        <id column="id" property="id"/>
+        <result column="operate_time" property="operateTime"/>
+        <result column="clas" property="clas"/>
+        <result column="method" property="method"/>
+        <result column="ip" property="ip"/>
+        <result column="param" property="param"/>
+        <result column="url" property="url"/>
+        <result column="description" property="description"/>
+        <result column="result" property="result"/>
+        <association property="systemUser">
+            <id property="id" column="u_id"/>
+            <result column="real_name" property="realName"/>
+            <result column="cellphone" property="cellphone"/>
+            <result column="email" property="email"/>
+            <result column="icon" property="icon"/>
+        </association>
+    </resultMap>
+    <select id="query" resultMap="baseMap">
+        select sl.id as id,
+               operate_time,
+               user_id,
+               clas,
+               method,
+               ip,
+               param,
+               url,
+               description,
+               result,
+               su.id as u_id,
+               real_name,
+               cellphone,
+               email,
+               icon
+        from system_log sl
+                 left join system_user su on sl.user_id = su.id
+        where sl.id = #{id}
+    </select>
+    <select id="list" resultMap="baseMap">
+        select sl.id as id, operate_time, user_id, ip, url, su.id as u_id, real_name, cellphone, email, icon
+        from system_log sl left join system_user su on sl.user_id = su.id
+        <where>
+            <if test="clas != null">
+                instr(clas,#{clas})
+            </if>
+            <if test="method != null">
+                and instr(method,#{method})
+            </if>
+            <if test="userId != null">
+                and user_id = #{userId}
+            </if>
+            <if test="ip != null">
+                and instr(ip,#{ip})
+            </if>
+            <if test="url != null">
+                and instr(url,#{url})
+            </if>
+            <if test="operateTimeStart != null and operateTimeEnd != null">
+                and operate_time between #{operateTimeStart} and #{operateTimeEnd}
+            </if>
+            <if test="operateTimeStart != null and operateTimeEnd == null">
+                and operate_time &gt; #{operateTimeStart}
+            </if>
+            <if test="operateTimeStart == null and operateTimeEnd != null">
+                and operate_time &lt; #{operateTimeEnd}
+            </if>
+        </where>
+        order by operate_time desc
+    </select>
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        insert into system_log(operate_time, user_id, clas, method, ip, param, url, description, result)
+            value (now(), #{userId}, #{clas}, #{method}, #{ip}, #{param}, #{url}, #{description}, #{result})
+    </insert>
+
+    <delete id="deleteByMonth">
+        delete from system_log where operate_time &lt; date_sub(curdate(), INTERVAL 30 DAY)
+    </delete>
+</mapper>

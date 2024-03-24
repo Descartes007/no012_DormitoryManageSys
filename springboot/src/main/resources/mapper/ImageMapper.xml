@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.ImageMapper">
+    <insert id="save">
+        insert into image(save_name, original_name, md5, upload_user, upload_time)
+        VALUE (#{saveName}, #{originalName}, #{md5}, #{uploadUser}, now())
+    </insert>
+    <select id="selectByMd5" resultType="Image">
+        select * from image where md5 = #{md5}
+    </select>
+</mapper>

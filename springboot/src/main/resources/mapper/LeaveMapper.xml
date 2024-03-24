@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.LeaveMapper">
+    <insert id="save">
+        insert into `leave`(time, reason, is_back, student_id, target, back_date)
+            value (now(), #{reason}, 0, #{studentId}, #{target}, #{backDate})
+    </insert>
+    <update id="update">
+        update `leave`
+        set is_back = 1
+        where id = #{id}
+    </update>
+
+    <resultMap id="baseMap" type="Leave">
+        <id column="id" property="id"/>
+        <result column="reason" property="reason"/>
+        <result column="time" property="time"/>
+        <result column="is_back" property="isBack"/>
+        <result column="student_id" property="studentId"/>
+        <result column="target" property="target"/>
+        <result column="back_date" property="backDate"/>
+        <association property="student">
+            <id property="id" column="s_id"/>
+            <id property="name" column="s_name"/>
+        </association>
+    </resultMap>
+    <select id="list" resultMap="baseMap">
+        select
+        l.id as id,
+        l.reason as reason,
+        l.time as time,
+        l.is_back as is_back,
+        l.student_id as student_id,
+        l.target as target,
+        l.back_date as back_date,
+        s.id as s_id,
+        s.name as s_name
+        from `leave` l left join student s on s.id = l.student_id
+        left join room r on s.room_id = r.id
+        <where>
+            <if test="leave.studentId != null">
+                l.student_id = #{leave.studentId}
+            </if>
+            <if test="leave.isBack != null">
+                and l.is_back = #{leave.isBack}
+            </if>
+            <if test="true">
+                and r.building_id in
+                <foreach collection="bId" separator="," open="(" close=")" item="item">
+                    #{item}
+                </foreach>
+                and (s.is_delete = 0 or s.is_delete is null)
+            </if>
+        </where>
+        order by l.time desc
+    </select>
+    <select id="query" resultMap="baseMap">
+        select l.id,
+               time,
+               reason,
+               is_back,
+               student_id,
+               target,
+               back_date,
+               s.name as s_name,
+               s.id   as s_id
+        from `leave` l
+                 left join student s on s.id = l.student_id
+        where l.id = #{id};
+    </select>
+    <delete id="delete">
+        delete
+        from `leave`
+        where id = #{id}
+    </delete>
+</mapper>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.StudentMapper">
+    <resultMap id="baseMap" type="Student">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="room_id" property="roomId"/>
+        <result column="faculty_id" property="facultyId"/>
+        <result column="number" property="number"/>
+        <result column="registration_date" property="registrationDate"/>
+        <result column="phone" property="phone"/>
+        <result column="photo" property="photo"/>
+        <result column="is_leave" property="isLeave"/>
+        <association property="room">
+            <id column="r_id" property="id"/>
+            <result column="r_number" property="number"/>
+        </association>
+        <association property="faculty">
+            <id property="id" column="f_id"/>
+            <result property="name" column="f_name"/>
+        </association>
+    </resultMap>
+
+    <select id="query" resultMap="baseMap">
+        select s.id     as id,
+               s.name   as name,
+               room_id,
+               faculty_id,
+               s.number as number,
+               registration_date,
+               phone,
+               photo,
+               is_leave,
+               r.id     as r_id,
+               r.number as r_number,
+               f.id     as f_id,
+               f.name   as f_name
+        from student s
+                 left join room r on s.room_id = r.id
+                 left join faculty f on s.faculty_id = f.id
+        where s.id = #{id}
+    </select>
+
+    <select id="list" resultMap="baseMap">
+        select s.id as id,
+        s.name as name,
+        s.room_id as room_id,
+        s.faculty_id as faculty_id,
+        s.number as number,
+        s.registration_date as registration_date,
+        s.photo as photo,
+        s.phone as phone,
+        s.is_leave as is_leave,
+        r.id as r_id,
+        r.number as r_number,
+        f.id as f_id,
+        f.name as f_name
+        from student s
+        left join room r on s.room_id = r.id
+        left join faculty f on s.faculty_id = f.id
+        <where>
+            <if test="s.name != null">
+                instr(s.name, #{s.name})
+            </if>
+            <if test="s.roomId!=null">
+                and s.room_id = #{s.roomId}
+            </if>
+            <if test="s.number!=null">
+                and instr(s.number, #{s.number})
+            </if>
+            <if test="s.isLeave!=null">
+                and s.is_leave = #{s.isLeave}
+            </if>
+            <if test="fid != null">
+                and s.faculty_id in
+                <foreach collection="fid" separator="," open="(" close=")" item="item">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="true">
+                and r.building_id in
+                <foreach collection="bid" separator="," open="(" close=")" item="item">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="true">
+                and (is_delete = 0 or is_delete is null)
+            </if>
+        </where>
+        order by s.id desc
+    </select>
+
+    <insert id="save">
+        insert into student(name, room_id, faculty_id, number, registration_date, phone, photo, is_leave, is_delete)
+            VALUE (#{name}, #{roomId}, #{facultyId}, #{number}, now(), #{phone}, #{photo}, 0, 0)
+    </insert>
+    <update id="delete">
+        update student
+        set is_delete = 1,
+            room_id   = null
+        where id = #{id}
+    </update>
+
+    <update id="update">
+        update student
+        <set>
+            <if test="name!=null">
+                name = #{name},
+            </if>
+            <if test="facultyId != null">
+                faculty_id = #{facultyId},
+            </if>
+            <if test="number != null">
+                `number`=#{number},
+            </if>
+            <if test="phone!=null">
+                phone = #{phone},
+            </if>
+            <if test="roomId!=null">
+                room_id = #{roomId}
+            </if>
+        </set>
+        where id =#{id}
+    </update>
+    <update id="changePhoto">
+        update student
+        set photo = #{photo}
+        where id = #{id}
+    </update>
+    <select id="countByRoomId" resultType="int">
+        select count(*)
+        from student
+        where room_id = #{rId};
+    </select>
+    <select id="countByFacultyId" resultType="int">
+        select count(*)
+        from student
+        where faculty_id in
+        <foreach collection="facultyId" separator="," open="(" close=")" item="item">
+            #{item}
+        </foreach>
+    </select>
+    <update id="updateLeave">
+        update student
+        set is_leave = #{isLeave}
+        where id = #{id}
+    </update>
+</mapper>

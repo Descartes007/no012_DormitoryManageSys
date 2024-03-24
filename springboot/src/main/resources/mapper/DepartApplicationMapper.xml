@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.DepartApplicationMapper">
+    <resultMap id="baseMap" type="DepartApplication">
+        <id property="id" column="id"/>
+        <result column="apply_user_id" property="applyUserId"/>
+        <result column="reason" property="reason"/>
+        <result column="time" property="time"/>
+        <result property="studentId" column="student_id"/>
+        <association property="applyUser">
+            <id column="u_id" property="id"/>
+            <result column="u_name" property="realName"/>
+        </association>
+        <association property="student">
+            <id column="s_id" property="id"/>
+            <result column="s_name" property="name"/>
+        </association>
+    </resultMap>
+    <insert id="saveApplication" keyProperty="id" keyColumn="id" useGeneratedKeys="true">
+        insert into depart_application(apply_user_id, reason, time, student_id)
+            VALUE (#{applyUserId}, #{reason}, now(), #{studentId})
+    </insert>
+
+    <insert id="saveApplicationUser">
+        insert into depart_application_user(operate_user_id, application_id)
+            value (#{userId}, #{applicationId})
+    </insert>
+
+    <select id="listMyApplication" resultMap="baseMap">
+        select da.id         as id,
+               apply_user_id,
+               reason,
+               da.time       as time,
+               da.student_id as student_id,
+               su.id         as u_id,
+               su.real_name  as u_name,
+               s.id          as s_id,
+               s.name        as s_name
+        from depart_application da
+                 left join student s on da.student_id = s.id
+                 left join system_user su on da.apply_user_id = su.id
+        where da.apply_user_id = #{userId}
+        order by da.time desc
+    </select>
+
+    <resultMap id="baseMap2" type="DepartApplicationUser">
+        <id property="id" column="dau_id"/>
+        <result column="operate_user_id" property="operateUserId"/>
+        <result column="is_agree" property="isAgree"/>
+        <result column="operate_time" property="operateTime"/>
+        <result column="dau_reason" property="reason"/>
+        <result column="application_id" property="applicationId"/>
+        <association property="application" resultMap="baseMap"/>
+    </resultMap>
+
+    <select id="listMyFlow" resultMap="baseMap2">
+        select dau.id           as dau_id,
+               dau.is_agree     as is_agree,
+               dau.operate_time as operate_time,
+               dau.reason       as dau_reason,
+               da.id            as id,
+               da.reason        as reason,
+               da.time          as time,
+               s.id             as s_id,
+               s.name           as s_name,
+               su.id            as u_id,
+               su.real_name     as u_name
+        from depart_application_user dau
+                 left join depart_application da on dau.application_id = da.id
+                 left join student s on s.id = da.student_id
+                 left join system_user su on da.apply_user_id = su.id
+        where dau.operate_user_id = #{userId}
+        order by da.time desc
+    </select>
+
+    <resultMap id="withUser" type="DepartApplicationUser">
+        <id property="id" column="id"/>
+        <result column="operate_user_id" property="operateUserId"/>
+        <result column="is_agree" property="isAgree"/>
+        <result column="operate_time" property="operateTime"/>
+        <result column="reason" property="reason"/>
+        <result column="application_id" property="applicationId"/>
+        <association property="operateUser">
+            <id column="u_id" property="id"/>
+            <result column="u_name" property="realName"/>
+        </association>
+    </resultMap>
+
+    <select id="listApplicationFlow" resultMap="withUser">
+        select dau.id           as id,
+               dau.is_agree     as is_agree,
+               dau.operate_time as operate_time,
+               dau.reason       as reason,
+               su.id            as u_id,
+               su.real_name     as u_name
+        from depart_application_user dau
+                 left join system_user su on dau.operate_user_id = su.id
+        where application_id = #{id}
+        order by dau.id desc
+    </select>
+
+    <select id="getApplication" resultMap="baseMap">
+        select da.id         as id,
+               apply_user_id,
+               reason,
+               da.time       as time,
+               da.student_id as student_id,
+               su.id         as u_id,
+               su.real_name  as u_name,
+               s.id          as s_id,
+               s.name        as s_name
+        from depart_application da
+                 left join student s on da.student_id = s.id
+                 left join system_user su on da.apply_user_id = su.id
+        where da.id = #{id}
+    </select>
+
+    <update id="update">
+        update depart_application_user
+        set is_agree     = #{isAgree},
+            reason       = #{reason},
+            operate_time = now()
+        where id = #{id}
+    </update>
+
+    <delete id="deleteApplication">
+        delete
+        from depart_application
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteFlow">
+        delete
+        from depart_application_user
+        where application_id = #{id}
+    </delete>
+
+    <select id="countFlow" resultType="int">
+        select count(*)
+        from depart_application_user
+        where application_id = #{id}
+          and is_agree is not null
+    </select>
+
+    <select id="countFlowAgreeIsNotNull" resultType="int">
+        select count(*)
+        from depart_application_user
+        where application_id = #{id}
+          and is_agree is null
+    </select>
+
+
+    <select id="countFlowAgreeIsNull" resultType="int">
+        select count(*)
+        from depart_application_user
+        where operate_user_id = #{userId}
+          and is_agree is null
+    </select>
+    <select id="getByDepartApplicationUserId" resultType="DepartApplication">
+        select da.id            as id,
+               da.apply_user_id as applyUserId,
+               da.student_id    as studentId,
+               da.reason        as reason
+        from depart_application da
+                 left join depart_application_user dau on da.id = dau.application_id
+        where dau.id = #{applicationUserId}
+    </select>
+
+    <select id="getApplicationUser" resultType="DepartApplicationUser">
+        select id,
+               operate_user_id,
+               is_agree,
+               operate_time,
+               reason,
+               application_id
+        from depart_application_user
+        where id = #{id}
+    </select>
+
+    <select id="getLastFlow" resultType="DepartApplicationUser">
+        select id,
+               operate_user_id,
+               is_agree,
+               operate_time,
+               reason,
+               application_id
+        from depart_application_user
+        where application_id = #{id}
+        order by id desc
+        limit 1
+    </select>
+</mapper>

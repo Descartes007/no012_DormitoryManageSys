@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.BackLateMapper">
+    <insert id="save" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into back_late(student_id, back_date, reason)
+            VALUE (#{studentId}, #{backDate}, #{reason})
+    </insert>
+
+    <update id="update">
+        update back_late
+        <set>
+            <if test="reason!=null">
+                reason=#{reason},
+            </if>
+            <if test="true">
+                back_date = #{backDate}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="delete">
+        delete
+        from back_late
+        where id = #{id}
+    </delete>
+
+    <resultMap id="baseMap" type="BackLate">
+        <id property="id" column="id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="reason" column="reason"/>
+        <result property="backDate" column="back_date"/>
+        <association property="student">
+            <id property="id" column="s_id"/>
+            <result property="name" column="s_name"/>
+        </association>
+    </resultMap>
+
+    <select id="list" resultMap="baseMap">
+        select bl.id as id,
+               bl.student_id as studnet_id,
+               reason,
+               back_date,
+               s.id as s_id,
+               s.name as s_name
+        from back_late bl
+                 left join student s on s.id = bl.student_id
+                 left join room r on s.room_id = r.id
+        <where>
+            <if test="backLate.studentId!=null">
+                student_id = #{backLate.studentId}
+            </if>
+            <if test="true">
+                and r.building_id in
+                <foreach collection="bId" separator="," open="(" close=")" item="item">
+                    #{item}
+                </foreach>
+                and (s.is_delete = 0 or s.is_delete is null)
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="query" resultMap="baseMap">
+        select bl.id as id,
+               bl.student_id as student_id,
+               reason,
+               back_date,
+               s.id as s_id,
+               s.name as s_name
+        from back_late bl
+                 left join student s on s.id = bl.student_id
+        where bl.id = #{id}
+    </select>
+</mapper>

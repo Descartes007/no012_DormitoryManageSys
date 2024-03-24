@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hzvtc.myproject.dao.RoomMapper">
+    <resultMap id="baseMap" type="Room">
+        <id column="id" property="id"/>
+        <result column="number" property="number"/>
+        <result property="buildingId" column="b_id"/>
+        <result column="max_capacity" property="maxCapacity"/>
+        <result column="current_num" property="currentNum"/>
+        <association property="building">
+            <id column="b_id" property="id"/>
+            <result column="b_name" property="name"/>
+        </association>
+    </resultMap>
+
+    <insert id="save">
+        insert into room(number, building_id, max_capacity)
+        VALUE (#{number}, #{buildingId}, #{maxCapacity})
+    </insert>
+
+    <select id="listByBuildingId" resultType="Room">
+        select id, number, building_id, max_capacity
+        from room where building_id in
+            <foreach collection="buildingId" open="(" close=")" item="item" separator=",">
+                #{item}
+            </foreach>
+    </select>
+
+    <select id="list" resultMap="baseMap">
+        select r.id as id,
+               number,
+               building_id,
+               max_capacity,
+               b.id as b_id,
+               b.name as b_name,
+               (select count(*) from student where room_id = r.id) as current_num
+        from room r join building b on b.id = r.building_id
+        <where>
+            <if test="room.number != null">
+                instr(`number`, #{room.number})
+            </if>
+            <if test="selectBid != null">
+                and building_id in
+                <foreach collection="selectBid" open="(" close=")" separator="," item="item">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="room.isFull != null and room.isFull">
+                and max_capacity = (select count(*) from student where room_id = r.id)
+            </if>
+            <if test="room.isFull != null and not room.isFull">
+                and max_capacity > (select count(*) from student where room_id = r.id)
+            </if>
+            <if test="true">
+                and building_id in
+                <foreach collection="bid" open="(" close=")" separator="," item="item">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        order by `number`
+    </select>
+    <select id="query" resultType="Room">
+        select id, number, building_id, max_capacity
+        from room where id = #{id};
+    </select>
+
+    <delete id="delete">
+        delete from room where id = #{id}
+    </delete>
+
+    <update id="update">
+        update room
+        <set>
+            <if test="number != null">
+                number = #{number},
+            </if>
+            <if test="buildingId != null">
+                building_id = #{buildingId},
+            </if>
+            <if test="maxCapacity != null">
+                max_capacity = #{maxCapacity}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="getMaxCapacity" resultType="int">
+        select max_capacity from room where id = #{id}
+    </select>
+
+    <select id="count" resultType="int">
+        select count(*)
+        from room where building_id in
+        <foreach collection="bid" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hzvtc.myproject.dao.BuildingMapper">
+    <resultMap id="baseMap" type="Building">
+        <id column="id" property="id"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="name" property="name"/>
+        <collection property="children" ofType="Building" column="id"
+                    select="com.hzvtc.myproject.dao.BuildingMapper.list"/>
+    </resultMap>
+    <select id="listAll" resultType="Building">
+        select id, name
+        from building
+    </select>
+    <insert id="insert">
+        insert into building(name, parent_id) VALUE (#{name}, #{parentId})
+    </insert>
+    <update id="update">
+        update building
+        set name      = #{name},
+            parent_id = #{parentId}
+        where id = #{id}
+    </update>
+    <select id="list" resultMap="baseMap">
+        select id, name, parent_id from building
+        where parent_id
+        <if test="parentId == null">
+            is
+        </if>
+        <if test="parentId != null">
+            =
+        </if>
+        #{parentId}
+    </select>
+    <select id="query" resultType="Building">
+        select id, name, parent_id
+        from building
+        where id = #{id}
+    </select>
+    <delete id="delete">
+        delete
+        from building
+        where id = #{id}
+    </delete>
+
+    <select id="listByParentId" resultType="long">
+        select id
+        from building
+        where parent_id = #{pid}
+    </select>
+
+    <select id="countStudentByBuildingIds" resultType="int">
+        select count(*)
+        from student where room_id in (select id from room where room.building_id in
+        <foreach collection="buildingIds" open="(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+    <select id="countRoomByBuildingIds" resultType="int">
+        select count(*)
+        from room where building_id in
+        <foreach collection="buildingIds" open="(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

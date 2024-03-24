@@ -1,0 +1,36 @@
+server:
+  port: 8088
+spring:
+  # 你的账号和密码
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/no012_dormitory?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: 1025
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+  servlet:
+    multipart:
+      max-request-size: 100MB
+      max-file-size: 100MB
+  devtools:
+    restart:
+      enabled: true
+  jackson:
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+  redis:
+    host: localhost
+    port: 6379
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.hzvtc.myproject.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+pagehelper:
+  reasonable: true
+constant:
+  upload-path: C:/home/upload/
+logging:
+  level:
+    com.hzvtc.myproject.aop: info
